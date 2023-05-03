@@ -38,6 +38,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val cryptoManager = CryptoManager()
+
         setContent {
             CipherHiveTheme {
                 // A surface container using the 'background' color from the theme
@@ -112,7 +114,9 @@ class MainActivity : ComponentActivity() {
 
                                         navController.popBackStack()
                                     }
-                                }
+                                },
+                                cryptoManager = cryptoManager,
+                                filesDir = filesDir
                             )
                         }
                     }
