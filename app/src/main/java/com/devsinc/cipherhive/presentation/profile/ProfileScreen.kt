@@ -30,19 +30,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import coil.compose.AsyncImage
-import com.devsinc.cipherhive.CryptoManager
 import com.devsinc.cipherhive.model.UserDatum
 import com.devsinc.cipherhive.presentation.sign_in.UserData
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun ProfileScreen(
     userData: UserData?,
     onSignOut: () -> Unit,
-    cryptoManager: CryptoManager,
-    filesDir: File,
     dataStore: DataStore<UserDatum>
 ) {
     Column(
@@ -75,11 +71,8 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.size(16.dp))
+
         // demo for testing encryption
-        var messageToEncrypt by remember { mutableStateOf("") }
-
-        var messageToDecrypt by remember { mutableStateOf("") }
-
         var username by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var readData by remember { mutableStateOf(UserDatum()) }
