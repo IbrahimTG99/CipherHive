@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.core.DataStore
 import androidx.datastore.dataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +35,8 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    val cryptoManager = CryptoManager()
+
     private val googleAuthUiClient by lazy {
         GoogleAuthUiClient(
             context = applicationContext,
@@ -42,12 +45,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private val Context.dataStore: DataStore<UserDatum> by dataStore(
-        fileName = "user-datum.json", serializer = UserDatumSerializer(CryptoManager())
+        fileName = "user-datum.json", serializer = UserDatumSerializer(cryptoManager)
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val cryptoManager = CryptoManager()
+        installSplashScreen()
 
         setContent {
             CipherHiveTheme {
