@@ -118,8 +118,6 @@ class MainActivity : ComponentActivity() {
                                         navController.popBackStack()
                                     }
                                 },
-                                cryptoManager = cryptoManager,
-                                filesDir = filesDir,
                                 dataStore = dataStore
                             )
                         }

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "711735612593",
+    "project_id": "cipherhive-233de",
+    "storage_bucket": "cipherhive-233de.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711735612593:android:8c6155eb9b78bd9df37e90",
+        "android_client_info": {
+          "package_name": "com.devsinc.cipherhive"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "711735612593-m990pr550osnjurih6kdpdh3u272lg84.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvC05kDL20dmx7Gd8eLyxZGuyKSP-K5WM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "711735612593-m990pr550osnjurih6kdpdh3u272lg84.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
