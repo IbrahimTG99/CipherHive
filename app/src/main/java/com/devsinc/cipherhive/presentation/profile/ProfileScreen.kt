@@ -32,7 +32,9 @@ import androidx.datastore.core.DataStore
 import coil.compose.AsyncImage
 import com.devsinc.cipherhive.model.UserDatum
 import com.devsinc.cipherhive.presentation.sign_in.UserData
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
