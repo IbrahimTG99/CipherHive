@@ -85,7 +85,7 @@ fun Splash(navController: NavController) {
             Text(
                 text = "The only password manager you’ll ever need.",
                 fontSize = 10.sp,
-                color = Color(0xfffBABABA),
+                color = Color(0xFFBABABA),
                 modifier = Modifier
                     .layoutId("tvTagLine"),
 

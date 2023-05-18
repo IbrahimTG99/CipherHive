@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="greetings" translatable="true">
+        <item>Hello there</item>
+        <item>Nice to meet you</item>
+        <item>Stop tapping on me</item>
+        <item>I\'m your friend</item>
+        <item>How\'s it going?</item>
+        <item>Have a good day</item>
+        <item>I am CipherHive!</item>
+        <item>What are you doing?</item>
+        <item>Don\'t you have other things to do?</item>
+        <item>Yes?</item>
+        <item>What do you want?</item>
+        <item>It tickles</item>
+        <item>How can I help you?</item>
+    </string-array>
+    <string-array name="username_hints" translatable="false">
+        <item>user</item>
+        <item>mail</item>
+        <item>name</item>
+        <item>nick</item>
+        <item>phone</item>
+        <item>number</item>
+        <item>tax</item>
+        <item>zip</item>
+        <item>client</item>
+    </string-array>
+    <string-array name="password_hints" translatable="false">
+        <item>pass</item>
+        <item>code</item>
+    </string-array>
+</resources>

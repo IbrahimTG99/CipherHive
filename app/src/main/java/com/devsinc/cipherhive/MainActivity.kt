@@ -8,13 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -24,9 +19,7 @@ import com.devsinc.cipherhive.presentation.auth.Intro
 import com.devsinc.cipherhive.presentation.auth.Login
 import com.devsinc.cipherhive.presentation.auth.Register
 import com.devsinc.cipherhive.presentation.home.Home
-import com.devsinc.cipherhive.presentation.profile.ProfileScreen
 import com.devsinc.cipherhive.presentation.sign_in.GoogleAuthUiClient
-import com.devsinc.cipherhive.presentation.sign_in.SignInScreen
 import com.devsinc.cipherhive.presentation.sign_in.SignInViewModel
 import com.devsinc.cipherhive.presentation.splash.Splash
 import com.devsinc.cipherhive.ui.theme.CipherHiveTheme
@@ -41,7 +34,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+//        installSplashScreen()
 
         setContent {
             CipherHiveTheme {
@@ -55,9 +48,53 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("intro") {
                         Intro(navController)
+                        LaunchedEffect(key1 = Unit) {
+                            if (googleAuthUiClient.getSignedInUser() != null) {
+                                navController.navigate("home") {
+                                    popUpTo(0)
+                                }
+                            }
+                        }
                     }
                     composable("login") {
-                        Login(navController)
+                        val viewModel: SignInViewModel by viewModels()
+                        val state by viewModel.state.collectAsStateWithLifecycle()
+
+                        val launcher =
+                            rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
+                                onResult = { result ->
+                                    if (result.resultCode == RESULT_OK) {
+                                        lifecycleScope.launch {
+                                            val signInResult = googleAuthUiClient.signInWithIntent(
+                                                intent = result.data ?: return@launch
+                                            )
+                                            viewModel.onSignInResult(signInResult)
+                                        }
+                                    }
+                                })
+
+                        LaunchedEffect(key1 = state.isSignInSuccessful) {
+                            if (state.isSignInSuccessful) {
+                                Toast.makeText(
+                                    this@MainActivity, "Sign in successful", Toast.LENGTH_LONG
+                                ).show()
+                                navController.navigate("home") {
+                                    popUpTo(0)
+                                }
+                                viewModel.resetState()
+                            }
+                        }
+
+                        Login(state = state, onSignInClick = {
+                            lifecycleScope.launch {
+                                val signInIntentSender = googleAuthUiClient.signIn()
+                                launcher.launch(
+                                    IntentSenderRequest.Builder(
+                                        signInIntentSender ?: return@launch
+                                    ).build()
+                                )
+                            }
+                        }, navController = navController)
                     }
                     composable("register") {
                         Register(navController)
@@ -136,8 +173,7 @@ class MainActivity : ComponentActivity() {
 //
 //                                        navController.popBackStack()
 //                                    }
-//                                }
-//                            )
+//                                })
 //                        }
 //                    }
 //                }

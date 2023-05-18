@@ -1,20 +1,8 @@
 package com.devsinc.cipherhive
 
-import com.devsinc.cipherhive.model.CredentialsModel
+import com.devsinc.cipherhive.domain.model.Credential
 
 
 fun getMockList() = listOf(
-    CredentialsModel("2","Facebook","https://www.facebook.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Gmail","https://www.Gmail.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Hotstar","https://www.hotstar.com","infokaydev@gmail.com","1234567ky"),
-    CredentialsModel("2","Facebook","https://www.facebook.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Gmail","https://www.Gmail.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Hotstar","https://www.hotstar.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("3","Facebook","https://www.facebook.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Gmail","https://www.Gmail.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Hotstar","https://www.hotstar.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","PTCL","https://www.hotstar.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Hotstar","https://www.hotstar.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Hotstar","https://www.hotstar.com","infokaydev@gmail.com", "1234567ky"),
-    CredentialsModel("1","Hotstar","https://www.hotstar.com","infokaydev@gmail.com", "1234567ky")
+    Credential(2,"Facebook","IBRAHIM","1234567ky", "https://www.facebook.com", packageId = "facebook" )
 )

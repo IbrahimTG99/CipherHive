@@ -1,5 +1,11 @@
 package com.devsinc.cipherhive.presentation.home
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.os.PersistableBundle
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -46,10 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -61,8 +65,8 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import com.devsinc.cipherhive.R
+import com.devsinc.cipherhive.domain.model.Credential
 import com.devsinc.cipherhive.getMockList
-import com.devsinc.cipherhive.model.CredentialsModel
 import com.devsinc.cipherhive.ui.theme.BebasNue
 import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
@@ -73,7 +77,8 @@ import com.devsinc.cipherhive.ui.theme.Typography
 @Composable
 fun Home() {
 
-    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val clipboardManager =
+        LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     val scaffoldState = rememberScaffoldState()
 
@@ -87,7 +92,7 @@ fun Home() {
 
 
     val passwordStored by rememberSaveable {
-        mutableStateOf(5)
+        mutableStateOf(2)
     }
 
     val passwordBreached by rememberSaveable {
@@ -187,7 +192,7 @@ fun Home() {
                 )
                 LazyColumn(modifier = Modifier.layoutId("rv")) {
                     val filteredList =
-                        getMockList().filter { s -> s.title.toString().contains(searchQuery) }
+                        getMockList().filter { s -> s.label.toString().contains(searchQuery) }
                     if (filteredList.isEmpty()) {
                         searchQueryEmpty = true
                     } else {
@@ -216,7 +221,12 @@ fun Home() {
 
 
 @Composable
-fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: ClipboardManager) {
+fun RecyclerItems(
+    index: Int,
+    item: Credential,
+    clipboardManager: ClipboardManager,
+    localContext: Context = LocalContext.current
+) {
     ConstraintLayout(
         modifier = Modifier
             .fillMaxWidth()
@@ -229,7 +239,7 @@ fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: Clipboar
         val color = if (index % 2 == 0) {
             Color(0xFFFF6464)
         } else Color(0xFF545974)
-        Text(text = item.title[0].toString(),
+        Text(text = item.label[0].toString(),
             color = Color.White,
             fontSize = 30.sp,
             textAlign = TextAlign.Center,
@@ -243,7 +253,7 @@ fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: Clipboar
                     start.linkTo(parent.start, 8.dp)
                     centerVerticallyTo(parent)
                 })
-        Text(text = item.title,
+        Text(text = item.label,
             color = Color(0xFF545974),
             fontSize = 16.sp,
             fontFamily = Poppins(),
@@ -257,7 +267,21 @@ fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: Clipboar
                 centerVerticallyTo(parent)
             })
         IconButton(onClick = {
-            clipboardManager.setText(AnnotatedString(item.password))
+            val clipData = ClipData.newPlainText("Password", item.password)
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                Toast.makeText(
+                    localContext,
+                    "Password copied to clipboard",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            clipData.apply {
+                description.extras = PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", true)
+                }
+            }
+            clipboardManager.setPrimaryClip(clipData)
+
         }, modifier = Modifier.constrainAs(ivCopy) {
             end.linkTo(parent.end, 8.dp)
             centerVerticallyTo(parent)
