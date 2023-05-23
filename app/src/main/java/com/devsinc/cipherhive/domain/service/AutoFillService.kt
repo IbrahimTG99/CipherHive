@@ -14,24 +14,23 @@ import android.widget.RemoteViews
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.devsinc.cipherhive.R
-import com.devsinc.cipherhive.data.db.CredentialDao
 import com.devsinc.cipherhive.data.repository.CredentialRepository
 import com.devsinc.cipherhive.domain.model.Credential
 import com.devsinc.cipherhive.util.PasswordGenerator
 import com.devsinc.cipherhive.util.Util.json
 import com.devsinc.cipherhive.util.Util.toRoundedCorners
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import java.math.BigInteger
 import java.security.MessageDigest
 import javax.inject.Inject
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.cancel
 
-
+@AndroidEntryPoint
 class AutoFillService : AutofillService() {
     private val coroutineScope = CoroutineScope(context = Dispatchers.Unconfined)
 
@@ -55,7 +54,6 @@ class AutoFillService : AutofillService() {
         super.onCreate()
         usernameHints = resources.getStringArray(R.array.username_hints)
         passwordHints = resources.getStringArray(R.array.password_hints)
-        Log.d("AutoFillService", "Started")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -67,7 +65,6 @@ class AutoFillService : AutofillService() {
         cancellationSignal: CancellationSignal,
         callback: FillCallback
     ) {
-        Log.d("AutoFillService", "in fill request")
         coroutineScope.launch {
             ready = false
             idPackage = ""
@@ -107,7 +104,9 @@ class AutoFillService : AutofillService() {
                         getString(R.string.autofill_random_password)
                     )
                     credentialsPresentation.setImageViewBitmap(
-                        R.id.favicon, ResourcesCompat.getDrawable(resources, R.drawable.ic_app_logo, null)?.toBitmap()
+                        R.id.favicon,
+                        ResourcesCompat.getDrawable(resources, R.drawable.ic_app_logo, null)
+                            ?.toBitmap()
                     )
 
                     try {
@@ -198,6 +197,7 @@ class AutoFillService : AutofillService() {
                 )
             }
 
+            Log.d("AutoFillService", "onSaveRequest: $params")
             coroutineScope.launch {
                 try {
                     // will save password to database
@@ -226,7 +226,6 @@ class AutoFillService : AutofillService() {
 
         if (!mode) {
             if (usernameId.isNotEmpty() && passwordId.isNotEmpty() && !ready) {
-                // launch coroutine to get credentials
                 coroutineScope.launch {
                     try {
                         credentialRepository.getAllCredentialsStream().collect { credentials ->
@@ -245,10 +244,12 @@ class AutoFillService : AutofillService() {
                                     credentialsPresentation.setImageViewBitmap(
                                         R.id.favicon,
                                         password.favicon
-                                            ?: BitmapFactory.decodeResource(
+                                            ?: ResourcesCompat.getDrawable(
                                                 resources,
-                                                R.mipmap.ic_launcher
-                                            ).toRoundedCorners()
+                                                R.drawable.ic_app_logo,
+                                                null
+                                            )
+                                                ?.toBitmap()
                                     )
 
                                     fillResponse.addDataset(

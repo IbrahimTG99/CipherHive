@@ -10,7 +10,7 @@ import kotlinx.serialization.Contextual
 @Entity(tableName = "credentials")
 data class Credential(
     @PrimaryKey(autoGenerate = true)
-    val id: Long,
+    val id: Long = 0,
     val label: String,
     val username: String,
     val password: String,

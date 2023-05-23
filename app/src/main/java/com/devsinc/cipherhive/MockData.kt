@@ -4,5 +4,5 @@ import com.devsinc.cipherhive.domain.model.Credential
 
 
 fun getMockList() = listOf(
-    Credential(2,"Facebook","IBRAHIM","1234567ky", "https://www.facebook.com", packageId = "facebook" )
+    Credential(1,"Facebook","IBRAHIM","1234567ky", "facebook.com", packageId = "com.facebook.lite" )
 )

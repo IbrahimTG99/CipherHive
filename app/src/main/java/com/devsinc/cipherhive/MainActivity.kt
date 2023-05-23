@@ -15,6 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.devsinc.cipherhive.data.repository.CredentialRepository
+import com.devsinc.cipherhive.domain.model.Credential
 import com.devsinc.cipherhive.presentation.auth.Intro
 import com.devsinc.cipherhive.presentation.auth.Login
 import com.devsinc.cipherhive.presentation.auth.Register

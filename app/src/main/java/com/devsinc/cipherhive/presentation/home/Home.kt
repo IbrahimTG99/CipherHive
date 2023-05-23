@@ -44,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,9 +65,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.devsinc.cipherhive.R
 import com.devsinc.cipherhive.domain.model.Credential
-import com.devsinc.cipherhive.getMockList
 import com.devsinc.cipherhive.ui.theme.BebasNue
 import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
@@ -76,6 +77,10 @@ import com.devsinc.cipherhive.ui.theme.Typography
 @Preview
 @Composable
 fun Home() {
+
+    val viewModel: HomeViewModel = hiltViewModel()
+
+    val credentials: List<Credential> by viewModel.getAllCredentials().collectAsState(initial = emptyList())
 
     val clipboardManager =
         LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -90,9 +95,8 @@ fun Home() {
         mutableStateOf(false)
     }
 
-
     val passwordStored by rememberSaveable {
-        mutableStateOf(2)
+        mutableStateOf(credentials.size)
     }
 
     val passwordBreached by rememberSaveable {
@@ -192,7 +196,7 @@ fun Home() {
                 )
                 LazyColumn(modifier = Modifier.layoutId("rv")) {
                     val filteredList =
-                        getMockList().filter { s -> s.label.toString().contains(searchQuery) }
+                        credentials.filter { s -> s.label.toString().contains(searchQuery) }
                     if (filteredList.isEmpty()) {
                         searchQueryEmpty = true
                     } else {
