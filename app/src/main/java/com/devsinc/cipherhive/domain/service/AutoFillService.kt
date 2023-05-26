@@ -217,7 +217,6 @@ class AutoFillService : AutofillService() {
         windowNodes.forEach { traverseNode(viewNode = it.rootViewNode, mode = mode) }
     }
 
-    @SuppressLint("RestrictedApi")
     private fun traverseNode(viewNode: AssistStructure.ViewNode, mode: Boolean) {
         if (viewNode.webDomain != null && viewWebDomain.isEmpty())
             viewWebDomain = viewNode.webDomain!!
@@ -225,6 +224,7 @@ class AutoFillService : AutofillService() {
             idPackage = viewNode.idPackage.toString()
 
         if (!mode) {
+            Log.d("AutoFillService", "traverseNode: $usernameId, $passwordId, $ready")
             if (usernameId.isNotEmpty() && passwordId.isNotEmpty() && !ready) {
                 coroutineScope.launch {
                     try {
@@ -298,8 +298,10 @@ class AutoFillService : AutofillService() {
             else fillResponse.setIgnoredIds(viewNode.autofillId)
         }
 
-        val children = viewNode.run { (0 until childCount).map { getChildAt(it) } }
-        children.forEach { childNode -> traverseNode(viewNode = childNode, mode = mode) }
+        if (usernameId.isEmpty() || passwordId.isEmpty()) {
+            val children = viewNode.run { (0 until childCount).map { getChildAt(it) } }
+            children.forEach { childNode -> traverseNode(viewNode = childNode, mode = mode) }
+        }
     }
 
     private fun checkUsernameHints(viewNode: AssistStructure.ViewNode): Boolean {
@@ -308,7 +310,7 @@ class AutoFillService : AutofillService() {
                 it.contains(other = hint, ignoreCase = true) ||
                         hint.contains(other = it, ignoreCase = true)
             } == true || viewNode.hint?.contains(other = hint, ignoreCase = true) == true ||
-                    hint.contains(other = viewNode.hint.toString(), ignoreCase = true)
+                    (viewNode.hint?.isNotEmpty() == true && hint.contains(other = viewNode.hint.toString(), ignoreCase = true))
         }
     }
 

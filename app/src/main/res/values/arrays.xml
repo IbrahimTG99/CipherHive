@@ -25,6 +25,7 @@
         <item>tax</item>
         <item>zip</item>
         <item>client</item>
+        <item>email</item>
     </string-array>
     <string-array name="password_hints" translatable="false">
         <item>pass</item>

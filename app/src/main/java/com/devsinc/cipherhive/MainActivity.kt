@@ -15,12 +15,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.devsinc.cipherhive.data.repository.CredentialRepository
-import com.devsinc.cipherhive.domain.model.Credential
 import com.devsinc.cipherhive.presentation.auth.Intro
 import com.devsinc.cipherhive.presentation.auth.Login
 import com.devsinc.cipherhive.presentation.auth.Register
 import com.devsinc.cipherhive.presentation.home.Home
+import com.devsinc.cipherhive.presentation.profile.ProfileScreen
 import com.devsinc.cipherhive.presentation.sign_in.GoogleAuthUiClient
 import com.devsinc.cipherhive.presentation.sign_in.SignInViewModel
 import com.devsinc.cipherhive.presentation.splash.Splash
@@ -101,85 +100,23 @@ class MainActivity : ComponentActivity() {
                     composable("register") {
                         Register(navController)
                     }
-                    composable("home" ){
-                        Home()
+                    composable("home") {
+                        Home(navController = navController)
+                    }
+                    composable("profile") {
+                        ProfileScreen(userData = googleAuthUiClient.getSignedInUser(), onSignOut = {
+                            lifecycleScope.launch {
+                                googleAuthUiClient.signOut()
+                                Toast.makeText(
+                                    this@MainActivity, "Sign out successful", Toast.LENGTH_LONG
+                                ).show()
+
+                                navController.popBackStack()
+                            }
+                        })
                     }
                 }
             }
         }
-
-//        setContent {
-//            CipherHiveTheme {
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
-//                ) {
-//                    val navController = rememberNavController()
-//                    NavHost(navController = navController, startDestination = "sign_in") {
-//                        composable("sign_in") {
-//                            val viewModel: SignInViewModel by viewModels()
-//                            val state by viewModel.state.collectAsStateWithLifecycle()
-//
-//                            LaunchedEffect(key1 = Unit) {
-//                                if (googleAuthUiClient.getSignedInUser() != null) {
-//                                    navController.navigate("profile")
-//                                }
-//                            }
-//
-//                            val launcher =
-//                                rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
-//                                    onResult = { result ->
-//                                        if (result.resultCode == RESULT_OK) {
-//                                            lifecycleScope.launch {
-//                                                val signInResult =
-//                                                    googleAuthUiClient.signInWithIntent(
-//                                                        intent = result.data ?: return@launch
-//                                                    )
-//                                                viewModel.onSignInResult(signInResult)
-//                                            }
-//                                        }
-//                                    })
-//
-//                            LaunchedEffect(key1 = state.isSignInSuccessful) {
-//                                if (state.isSignInSuccessful) {
-//                                    Toast.makeText(
-//                                        this@MainActivity, "Sign in successful", Toast.LENGTH_LONG
-//                                    ).show()
-//                                    navController.navigate("profile")
-//                                    viewModel.resetState()
-//                                }
-//                            }
-//
-//                            SignInScreen(state = state, onSignInClick = {
-//                                lifecycleScope.launch {
-//                                    val signInIntentSender = googleAuthUiClient.signIn()
-//                                    launcher.launch(
-//                                        IntentSenderRequest.Builder(
-//                                            signInIntentSender ?: return@launch
-//                                        ).build()
-//                                    )
-//                                }
-//                            })
-//                        }
-//
-//                        composable("profile") {
-//                            ProfileScreen(
-//                                userData = googleAuthUiClient.getSignedInUser(),
-//                                onSignOut = {
-//                                    lifecycleScope.launch {
-//                                        googleAuthUiClient.signOut()
-//                                        Toast.makeText(
-//                                            this@MainActivity,
-//                                            "Sign out successful",
-//                                            Toast.LENGTH_LONG
-//                                        ).show()
-//
-//                                        navController.popBackStack()
-//                                    }
-//                                })
-//                        }
-//                    }
-//                }
-//            }
-//        }
     }
 }

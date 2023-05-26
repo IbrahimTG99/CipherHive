@@ -37,7 +37,6 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.rememberScaffoldState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,13 +58,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.devsinc.cipherhive.R
 import com.devsinc.cipherhive.domain.model.Credential
 import com.devsinc.cipherhive.ui.theme.BebasNue
@@ -73,14 +72,21 @@ import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview
+//@Preview
 @Composable
-fun Home() {
+fun Home(navController: NavController) {
 
     val viewModel: HomeViewModel = hiltViewModel()
 
-    val credentials: List<Credential> by viewModel.getAllCredentials().collectAsState(initial = emptyList())
+//    viewModel.insertCredential(
+//        Credential(
+//            label = "Facebook",
+//            url = "https://www.facebook.com",
+//            username = "test",
+//            password = "test",
+//            packageId = "com.facebook.katana"
+//        )
+//    )
 
     val clipboardManager =
         LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -95,9 +101,14 @@ fun Home() {
         mutableStateOf(false)
     }
 
-    val passwordStored by rememberSaveable {
-        mutableStateOf(credentials.size)
+    var passwordStored by rememberSaveable {
+        mutableStateOf(0)
     }
+
+    val credentials: List<Credential> by viewModel.getAllCredentials()
+        .collectAsState(initial = emptyList()).apply {
+            passwordStored = this.value.size
+        }
 
     val passwordBreached by rememberSaveable {
         mutableStateOf(0)
@@ -116,12 +127,14 @@ fun Home() {
                 contentColor = Color.White,
                 modifier = Modifier.padding(top = 48.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = "Add icon")
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Credential icon")
             }
         },
         bottomBar = {
             HomeBottomMenu(
-                scaffoldState = scaffoldState, scope = rememberCoroutineScope()
+                scaffoldState = scaffoldState,
+                scope = rememberCoroutineScope(),
+                navController = navController
             )
         }) { it ->
         BoxWithConstraints(Modifier.padding(it)) {
@@ -196,7 +209,12 @@ fun Home() {
                 )
                 LazyColumn(modifier = Modifier.layoutId("rv")) {
                     val filteredList =
-                        credentials.filter { s -> s.label.toString().contains(searchQuery) }
+                        credentials.filter {
+                            it.label.startsWith(
+                                searchQuery,
+                                ignoreCase = true
+                            )
+                        }
                     if (filteredList.isEmpty()) {
                         searchQueryEmpty = true
                     } else {
