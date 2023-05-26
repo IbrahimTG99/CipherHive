@@ -10,11 +10,13 @@ import javax.inject.Inject
 class CredentialRepositoryImpl @Inject constructor(
     private val credentialDao: CredentialDao
 ) : CredentialRepository {
-    override fun getAllCredentialsStream(): Flow<List<Credential>> = credentialDao.getAllCredentials()
+    override fun getAllCredentialsStream(): Flow<List<Credential>> =
+        credentialDao.getAllCredentials()
 
-    override fun getCredentialsByUrlStream(url: String): Flow<List<Credential>> = credentialDao.getCredentialsByUrl(url)
+    override fun getCredentialsByUrlStream(url: String): Flow<List<Credential>> =
+        credentialDao.getCredentialsByUrl(url)
 
-    override suspend fun insertCredential(credential: Credential){
+    override suspend fun insertCredential(credential: Credential) {
         withContext(Dispatchers.IO) {
             credentialDao.insert(credential)
         }

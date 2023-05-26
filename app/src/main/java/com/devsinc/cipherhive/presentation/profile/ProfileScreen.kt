@@ -90,8 +90,7 @@ fun ProfileScreen(
                 modifier = Modifier
                     .padding(it),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF6464),
-                    contentColor = Color(0xFFFFFFFF)
+                    containerColor = Color(0xFFFF6464)
                 )
             ) {
                 Text(text = "Sign Out")

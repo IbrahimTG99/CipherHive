@@ -37,15 +37,20 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -64,29 +69,22 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.devsinc.cipherhive.R
 import com.devsinc.cipherhive.domain.model.Credential
+import com.devsinc.cipherhive.presentation.credential.AddCredential
 import com.devsinc.cipherhive.ui.theme.BebasNue
 import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
 
 
 //@Preview
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(navController: NavController) {
 
     val viewModel: HomeViewModel = hiltViewModel()
-
-//    viewModel.insertCredential(
-//        Credential(
-//            label = "Facebook",
-//            url = "https://www.facebook.com",
-//            username = "test",
-//            password = "test",
-//            packageId = "com.facebook.katana"
-//        )
-//    )
 
     val clipboardManager =
         LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -101,18 +99,26 @@ fun Home(navController: NavController) {
         mutableStateOf(false)
     }
 
-    var passwordStored by rememberSaveable {
-        mutableStateOf(0)
+    val credentials: List<Credential> by viewModel.getAllCredentials()
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+
+    val passwordStored by remember {
+        derivedStateOf {
+            credentials.size
+        }
     }
 
-    val credentials: List<Credential> by viewModel.getAllCredentials()
-        .collectAsState(initial = emptyList()).apply {
-            passwordStored = this.value.size
-        }
 
     val passwordBreached by rememberSaveable {
         mutableStateOf(0)
     }
+
+    val openBottomSheetState: MutableState<Boolean> = rememberSaveable {
+        mutableStateOf(false)
+    }
+    val scope = rememberCoroutineScope()
+    val bottomSheetState = rememberModalBottomSheetState()
+
 
     Scaffold(scaffoldState = scaffoldState,
         modifier = Modifier
@@ -122,7 +128,9 @@ fun Home(navController: NavController) {
         isFloatingActionButtonDocked = true,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {},
+                onClick = {
+                    openBottomSheetState.value = !openBottomSheetState.value
+                },
                 shape = CircleShape,
                 contentColor = Color.White,
                 modifier = Modifier.padding(top = 48.dp)
@@ -182,8 +190,7 @@ fun Home(navController: NavController) {
                             .height(160.dp)
                     )
                 }
-                OutlinedTextField(
-                    value = searchQuery,
+                OutlinedTextField(value = searchQuery,
                     onValueChange = {
                         searchQuery = it
                     },
@@ -208,13 +215,11 @@ fun Home(navController: NavController) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
                 LazyColumn(modifier = Modifier.layoutId("rv")) {
-                    val filteredList =
-                        credentials.filter {
-                            it.label.startsWith(
-                                searchQuery,
-                                ignoreCase = true
-                            )
-                        }
+                    val filteredList = credentials.filter {
+                        it.label.startsWith(
+                            searchQuery, ignoreCase = true
+                        )
+                    }
                     if (filteredList.isEmpty()) {
                         searchQueryEmpty = true
                     } else {
@@ -236,6 +241,15 @@ fun Home(navController: NavController) {
                         contentDescription = ""
                     )
                 }
+            }
+        }
+        // BottomSheet content
+        if (openBottomSheetState.value) {
+            ModalBottomSheet(
+                onDismissRequest = { openBottomSheetState.value = false },
+                sheetState = bottomSheetState,
+            ) {
+                AddCredential(bottomSheetState, scope, openBottomSheetState)
             }
         }
     }
@@ -292,9 +306,7 @@ fun RecyclerItems(
             val clipData = ClipData.newPlainText("Password", item.password)
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
                 Toast.makeText(
-                    localContext,
-                    "Password copied to clipboard",
-                    Toast.LENGTH_SHORT
+                    localContext, "Password copied to clipboard", Toast.LENGTH_SHORT
                 ).show()
             }
             clipData.apply {
