@@ -1,24 +1,30 @@
 package com.devsinc.cipherhive.domain.service
 
-import android.annotation.SuppressLint
 import android.app.assist.AssistStructure
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.CancellationSignal
-import android.service.autofill.*
+import android.service.autofill.AutofillService
+import android.service.autofill.Dataset
+import android.service.autofill.FillCallback
+import android.service.autofill.FillRequest
+import android.service.autofill.FillResponse
+import android.service.autofill.SaveCallback
+import android.service.autofill.SaveInfo
+import android.service.autofill.SaveRequest
 import android.text.InputType
 import android.util.Log
-import android.view.autofill.*
+import android.view.autofill.AutofillId
+import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
+import com.devsinc.cipherhive.CryptoManager
 import com.devsinc.cipherhive.R
-import com.devsinc.cipherhive.data.repository.CredentialRepository
+import com.devsinc.cipherhive.domain.repository.CredentialRepository
 import com.devsinc.cipherhive.domain.model.Credential
 import com.devsinc.cipherhive.util.PasswordGenerator
 import com.devsinc.cipherhive.util.Util.json
-import com.devsinc.cipherhive.util.Util.toRoundedCorners
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -151,8 +157,7 @@ class AutoFillService : AutofillService() {
 
         if (saveUsername.isNotEmpty() && savePassword.isNotEmpty()) {
             var hash = BigInteger(
-                1,
-                MessageDigest.getInstance("SHA-1").digest(savePassword.toByteArray())
+                1, MessageDigest.getInstance("SHA-1").digest(savePassword.toByteArray())
             ).toString(16)
             while (hash.length < 32) hash = "0$hash"
 
@@ -231,6 +236,7 @@ class AutoFillService : AutofillService() {
                         credentialRepository.getAllCredentialsStream().collect { credentials ->
                             credentials.forEach { password ->
                                 if (checkSuggestions(password = password)) {
+                                    val cryptoManager = CryptoManager("CH_${password.label}-${password.username}_KEY")
                                     val credentialsPresentation =
                                         RemoteViews(packageName, R.layout.autofill_list_item)
                                     credentialsPresentation.setTextViewText(
@@ -261,7 +267,7 @@ class AutoFillService : AutofillService() {
                                             )
                                             .setValue(
                                                 passwordId.last(),
-                                                AutofillValue.forText(password.password),
+                                                AutofillValue.forText(cryptoManager.decrypt(password.password)),
                                                 credentialsPresentation
                                             ).build()
                                     )

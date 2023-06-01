@@ -2,6 +2,7 @@ package com.devsinc.cipherhive.data.repository
 
 import com.devsinc.cipherhive.data.db.CredentialDao
 import com.devsinc.cipherhive.domain.model.Credential
+import com.devsinc.cipherhive.domain.repository.CredentialRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext

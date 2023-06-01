@@ -104,7 +104,8 @@ class MainActivity : ComponentActivity() {
                         Home(navController = navController)
                     }
                     composable("profile") {
-                        ProfileScreen(userData = googleAuthUiClient.getSignedInUser(), onSignOut = {
+                        ProfileScreen(userData = googleAuthUiClient.getSignedInUser(),
+                            onSignOut = {
                             lifecycleScope.launch {
                                 googleAuthUiClient.signOut()
                                 Toast.makeText(

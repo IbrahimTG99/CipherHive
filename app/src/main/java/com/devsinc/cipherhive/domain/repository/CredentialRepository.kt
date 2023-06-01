@@ -1,4 +1,4 @@
-package com.devsinc.cipherhive.data.repository
+package com.devsinc.cipherhive.domain.repository
 
 import com.devsinc.cipherhive.domain.model.Credential
 import kotlinx.coroutines.flow.Flow

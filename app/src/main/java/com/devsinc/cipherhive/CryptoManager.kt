@@ -2,29 +2,28 @@ package com.devsinc.cipherhive
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import java.io.InputStream
-import java.io.OutputStream
+import android.util.Log
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 
-class CryptoManager {
+class CryptoManager(private val keyAlias: String) {
     private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply {
         load(null)
     }
 
-    private val encryptCypher = Cipher.getInstance(TRANSFORMATION).apply {
+    private val encryptCipher = Cipher.getInstance(TRANSFORMATION).apply {
         init(Cipher.ENCRYPT_MODE, getKey())
     }
 
-    private fun getDecryptCypherForIv(iv: ByteArray) = Cipher.getInstance(TRANSFORMATION).apply {
+    private fun getDecryptCipherForIv(iv: ByteArray) = Cipher.getInstance(TRANSFORMATION).apply {
         init(Cipher.DECRYPT_MODE, getKey(), IvParameterSpec(iv))
     }
 
     private fun getKey(): SecretKey {
-        val existingKey = keyStore.getEntry("cipherhive", null) as? KeyStore.SecretKeyEntry
+        val existingKey = keyStore.getEntry(keyAlias, null) as? KeyStore.SecretKeyEntry
         return existingKey?.secretKey ?: createKey()
     }
 
@@ -32,7 +31,7 @@ class CryptoManager {
         return KeyGenerator.getInstance(ALGORITHM).apply {
             init(
                 KeyGenParameterSpec.Builder(
-                    "cipherhive", KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                    keyAlias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
                 ).setBlockModes(BLOCK_MODE).setEncryptionPaddings(PADDING)
                     .setRandomizedEncryptionRequired(true).setUserAuthenticationRequired(false)
                     .build()
@@ -40,29 +39,24 @@ class CryptoManager {
         }.generateKey()
     }
 
-    fun encrypt(data: ByteArray, outputStream: OutputStream): ByteArray {
-        val encryptedData = encryptCypher.doFinal(data)
-        outputStream.use {
-            it.write(encryptCypher.iv.size)
-            it.write(encryptCypher.iv)
-            it.write(encryptedData.size)
-            it.write(encryptedData)
-        }
-        return encryptedData
+    fun encrypt(data: ByteArray): ByteArray {
+        val encryptedData = encryptCipher.doFinal(data)
+        val result = ByteArray(1 + encryptCipher.iv.size + 1 + encryptedData.size)
+        result[0] = encryptCipher.iv.size.toByte()
+        encryptCipher.iv.copyInto(result, 1)
+        result[1 + encryptCipher.iv.size] = encryptedData.size.toByte()
+        encryptedData.copyInto(result, 1 + encryptCipher.iv.size + 1)
+        Log.d("CryptoManager", "encrypt: data: ${result.contentToString()}")
+        return result
     }
 
-    fun decrypt(inputStream: InputStream): ByteArray {
-        return inputStream.use {
-            val ivSize = it.read()
-            val iv = ByteArray(ivSize)
-            it.read(iv)
-
-            val encryptedDataSize = it.read()
-            val encryptedData = ByteArray(encryptedDataSize)
-            it.read(encryptedData)
-
-            getDecryptCypherForIv(iv).doFinal(encryptedData)
-        }
+    fun decrypt(data: ByteArray): String {
+        Log.d("CryptoManager", "decrypt: data: ${data.contentToString()}")
+        val ivSize = data[0].toInt()
+        val iv = data.copyOfRange(1, 1 + ivSize)
+        val encryptedDataSize = data[1 + ivSize].toInt()
+        val encryptedData = data.copyOfRange(1 + ivSize + 1, 1 + ivSize + 1 + encryptedDataSize)
+        return String(getDecryptCipherForIv(iv).doFinal(encryptedData))
     }
 
     companion object {
@@ -71,5 +65,4 @@ class CryptoManager {
         private const val PADDING = KeyProperties.ENCRYPTION_PADDING_PKCS7
         private const val TRANSFORMATION = "$ALGORITHM/$BLOCK_MODE/$PADDING"
     }
-
 }

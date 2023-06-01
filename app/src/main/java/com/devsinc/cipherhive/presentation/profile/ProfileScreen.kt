@@ -3,15 +3,20 @@ package com.devsinc.cipherhive.presentation.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,10 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.Dimension
 import coil.compose.AsyncImage
 import com.devsinc.cipherhive.presentation.sign_in.UserData
 import com.devsinc.cipherhive.ui.theme.BebasNue
@@ -42,14 +47,27 @@ fun ProfileScreen(
             .fillMaxSize()
             .background(Color.White),
         topBar = {
-            Text(
-                text = "Profile",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp),
-                fontFamily = BebasNue(),
-                color = Color(0xFF545974),
-                fontSize = 20.sp
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Password,
+                    contentDescription = null,
+                    modifier = Modifier.padding(start = 24.dp, top = 20.dp),
+                    tint = Color(0xFFFF6464)
+                )
+                Text(
+                    text = "Profile",
+                    modifier = Modifier
+                        .padding(start = 20.dp),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontFamily = BebasNue(),
+                    color = Color(0xFF545974),
+                    fontSize = 20.sp
+                )
+            }
         }
 
     ) {
@@ -66,7 +84,8 @@ fun ProfileScreen(
                     contentDescription = "Profile picture",
                     modifier = Modifier
                         .size(128.dp)
-                        .clip(CircleShape).border(
+                        .clip(CircleShape)
+                        .border(
                             width = 2.dp,
                             color = Color(0xFFFF6464),
                             shape = CircleShape

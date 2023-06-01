@@ -79,7 +79,6 @@ import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
 
 
-//@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(navController: NavController) {
@@ -132,6 +131,7 @@ fun Home(navController: NavController) {
                     openBottomSheetState.value = !openBottomSheetState.value
                 },
                 shape = CircleShape,
+                containerColor = Color(0xFFFF6464),
                 contentColor = Color.White,
                 modifier = Modifier.padding(top = 48.dp)
             ) {
@@ -243,7 +243,7 @@ fun Home(navController: NavController) {
                 }
             }
         }
-        // BottomSheet content
+
         if (openBottomSheetState.value) {
             ModalBottomSheet(
                 onDismissRequest = { openBottomSheetState.value = false },
@@ -261,7 +261,8 @@ fun RecyclerItems(
     index: Int,
     item: Credential,
     clipboardManager: ClipboardManager,
-    localContext: Context = LocalContext.current
+    localContext: Context = LocalContext.current,
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
     ConstraintLayout(
         modifier = Modifier
@@ -303,7 +304,7 @@ fun RecyclerItems(
                 centerVerticallyTo(parent)
             })
         IconButton(onClick = {
-            val clipData = ClipData.newPlainText("Password", item.password)
+            val clipData = ClipData.newPlainText("Password", viewModel.decryptPassword(item))
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
                 Toast.makeText(
                     localContext, "Password copied to clipboard", Toast.LENGTH_SHORT
