@@ -1,7 +1,7 @@
 package com.devsinc.cipherhive.domain.use_case.crypto
 
-import com.devsinc.cipherhive.CryptoManager
 import com.devsinc.cipherhive.domain.model.Credential
+import com.devsinc.cipherhive.util.CryptoManager
 
 class GetDecryptedPassword {
     operator fun invoke(

@@ -1,4 +1,4 @@
-package com.devsinc.cipherhive
+package com.devsinc.cipherhive.util
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

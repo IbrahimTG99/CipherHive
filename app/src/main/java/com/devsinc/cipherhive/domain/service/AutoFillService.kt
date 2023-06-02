@@ -19,10 +19,10 @@ import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
-import com.devsinc.cipherhive.CryptoManager
 import com.devsinc.cipherhive.R
-import com.devsinc.cipherhive.domain.repository.CredentialRepository
 import com.devsinc.cipherhive.domain.model.Credential
+import com.devsinc.cipherhive.domain.repository.CredentialRepository
+import com.devsinc.cipherhive.util.CryptoManager
 import com.devsinc.cipherhive.util.PasswordGenerator
 import com.devsinc.cipherhive.util.Util.json
 import dagger.hilt.android.AndroidEntryPoint
@@ -67,9 +67,7 @@ class AutoFillService : AutofillService() {
     }
 
     override fun onFillRequest(
-        request: FillRequest,
-        cancellationSignal: CancellationSignal,
-        callback: FillCallback
+        request: FillRequest, cancellationSignal: CancellationSignal, callback: FillCallback
     ) {
         coroutineScope.launch {
             ready = false
@@ -102,12 +100,10 @@ class AutoFillService : AutofillService() {
                     val credentialsPresentation =
                         RemoteViews(packageName, R.layout.autofill_list_item)
                     credentialsPresentation.setTextViewText(
-                        R.id.label,
-                        getString(R.string.random_password)
+                        R.id.label, getString(R.string.random_password)
                     )
                     credentialsPresentation.setTextViewText(
-                        R.id.username,
-                        getString(R.string.autofill_random_password)
+                        R.id.username, getString(R.string.autofill_random_password)
                     )
                     credentialsPresentation.setImageViewBitmap(
                         R.id.favicon,
@@ -117,12 +113,11 @@ class AutoFillService : AutofillService() {
 
                     try {
                         fillResponse.addDataset(
-                            Dataset.Builder()
-                                .setValue(
-                                    it,
-                                    AutofillValue.forText(randomPassword.await()),
-                                    credentialsPresentation
-                                ).build()
+                            Dataset.Builder().setValue(
+                                it,
+                                AutofillValue.forText(randomPassword.await()),
+                                credentialsPresentation
+                            ).build()
                         )
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -163,19 +158,16 @@ class AutoFillService : AutofillService() {
 
             val appName = idPackage.substringAfter(delimiter = ".").substringBefore(delimiter = ".")
 
-            val params = mutableMapOf<String, String>(
-                "password" to savePassword,
+            val params = mutableMapOf<String, String>("password" to savePassword,
                 "label" to when {
                     viewWebDomain.isNotEmpty() -> viewWebDomain.removePrefix(prefix = "www.")
-                        .substringBefore(delimiter = ".")
-                        .replaceFirstChar { it.titlecase() }
+                        .substringBefore(delimiter = ".").replaceFirstChar { it.titlecase() }
 
                     idPackage.isNotEmpty() -> {
                         try {
                             packageManager.getApplicationLabel(
                                 packageManager.getApplicationInfo(
-                                    idPackage,
-                                    0
+                                    idPackage, 0
                                 )
                             ).toString()
                         } catch (e: Exception) {
@@ -194,9 +186,7 @@ class AutoFillService : AutofillService() {
                 params["customFields"] = json.encodeToString(
                     value = listOf(
                         mapOf(
-                            "label" to "Android app",
-                            "type" to "text",
-                            "value" to idPackage
+                            "label" to "Android app", "type" to "text", "value" to idPackage
                         )
                     )
                 )
@@ -223,10 +213,9 @@ class AutoFillService : AutofillService() {
     }
 
     private fun traverseNode(viewNode: AssistStructure.ViewNode, mode: Boolean) {
-        if (viewNode.webDomain != null && viewWebDomain.isEmpty())
-            viewWebDomain = viewNode.webDomain!!
-        if (viewNode.idPackage?.contains(".") == true)
-            idPackage = viewNode.idPackage.toString()
+        if (viewNode.webDomain != null && viewWebDomain.isEmpty()) viewWebDomain =
+            viewNode.webDomain!!
+        if (viewNode.idPackage?.contains(".") == true) idPackage = viewNode.idPackage.toString()
 
         if (!mode) {
             Log.d("AutoFillService", "traverseNode: $usernameId, $passwordId, $ready")
@@ -236,40 +225,33 @@ class AutoFillService : AutofillService() {
                         credentialRepository.getAllCredentialsStream().collect { credentials ->
                             credentials.forEach { password ->
                                 if (checkSuggestions(password = password)) {
-                                    val cryptoManager = CryptoManager("CH_${password.label}-${password.username}_KEY")
+                                    val cryptoManager =
+                                        CryptoManager("CH_${password.label}-${password.username}_KEY")
                                     val credentialsPresentation =
                                         RemoteViews(packageName, R.layout.autofill_list_item)
                                     credentialsPresentation.setTextViewText(
-                                        R.id.label,
-                                        password.label
+                                        R.id.label, password.label
                                     )
                                     credentialsPresentation.setTextViewText(
-                                        R.id.username,
-                                        password.username
+                                        R.id.username, password.username
                                     )
                                     credentialsPresentation.setImageViewBitmap(
                                         R.id.favicon,
-                                        password.favicon
-                                            ?: ResourcesCompat.getDrawable(
-                                                resources,
-                                                R.drawable.ic_app_logo,
-                                                null
-                                            )
-                                                ?.toBitmap()
+                                        password.favicon ?: ResourcesCompat.getDrawable(
+                                            resources, R.drawable.ic_app_logo, null
+                                        )?.toBitmap()
                                     )
 
                                     fillResponse.addDataset(
-                                        Dataset.Builder()
-                                            .setValue(
-                                                usernameId.last(),
-                                                AutofillValue.forText(password.username),
-                                                credentialsPresentation
-                                            )
-                                            .setValue(
-                                                passwordId.last(),
-                                                AutofillValue.forText(cryptoManager.decrypt(password.password)),
-                                                credentialsPresentation
-                                            ).build()
+                                        Dataset.Builder().setValue(
+                                            usernameId.last(),
+                                            AutofillValue.forText(password.username),
+                                            credentialsPresentation
+                                        ).setValue(
+                                            passwordId.last(),
+                                            AutofillValue.forText(cryptoManager.decrypt(password.password)),
+                                            credentialsPresentation
+                                        ).build()
                                     )
 
                                     ready = true
@@ -283,24 +265,20 @@ class AutoFillService : AutofillService() {
 
             }
 
-            if (checkUsernameHints(viewNode = viewNode) &&
-                !usernameId.contains(element = viewNode.autofillId)
-            ) {
+            if (checkUsernameHints(viewNode = viewNode) && !usernameId.contains(element = viewNode.autofillId)) {
                 usernameId.add(element = viewNode.autofillId!!)
 
                 if (usernameId.size == passwordId.size) ready = false
-            } else if (checkPasswordHints(viewNode = viewNode) &&
-                !passwordId.contains(element = viewNode.autofillId)
-            ) {
+            } else if (checkPasswordHints(viewNode = viewNode) && !passwordId.contains(element = viewNode.autofillId)) {
                 passwordId.add(element = viewNode.autofillId!!)
 
                 if (passwordId.size < usernameId.size) ready = false
             } else fillResponse.setIgnoredIds(viewNode.autofillId)
         } else {
-            if (checkUsernameHints(viewNode = viewNode) && viewNode.text?.isNotEmpty() == true)
-                saveUsername = viewNode.text.toString()
-            else if (checkPasswordHints(viewNode = viewNode) && viewNode.text?.isNotEmpty() == true)
-                savePassword = viewNode.text.toString()
+            if (checkUsernameHints(viewNode = viewNode) && viewNode.text?.isNotEmpty() == true) saveUsername =
+                viewNode.text.toString()
+            else if (checkPasswordHints(viewNode = viewNode) && viewNode.text?.isNotEmpty() == true) savePassword =
+                viewNode.text.toString()
             else fillResponse.setIgnoredIds(viewNode.autofillId)
         }
 
@@ -313,52 +291,56 @@ class AutoFillService : AutofillService() {
     private fun checkUsernameHints(viewNode: AssistStructure.ViewNode): Boolean {
         return usernameHints.any { hint ->
             viewNode.autofillHints?.any {
-                it.contains(other = hint, ignoreCase = true) ||
-                        hint.contains(other = it, ignoreCase = true)
-            } == true || viewNode.hint?.contains(other = hint, ignoreCase = true) == true ||
-                    (viewNode.hint?.isNotEmpty() == true && hint.contains(other = viewNode.hint.toString(), ignoreCase = true))
+                it.contains(other = hint, ignoreCase = true) || hint.contains(
+                    other = it,
+                    ignoreCase = true
+                )
+            } == true || viewNode.hint?.contains(
+                other = hint,
+                ignoreCase = true
+            ) == true || (viewNode.hint?.isNotEmpty() == true && hint.contains(
+                other = viewNode.hint.toString(),
+                ignoreCase = true
+            ))
         }
     }
 
     private fun checkPasswordHints(viewNode: AssistStructure.ViewNode): Boolean {
         return passwordHints.any { hint ->
             viewNode.autofillHints?.any {
-                it.contains(other = hint, ignoreCase = true) ||
-                        hint.contains(other = it, ignoreCase = true)
-            } == true || viewNode.hint?.contains(other = hint, ignoreCase = true) == true ||
-                    hint.contains(other = viewNode.hint.toString(), ignoreCase = true)
-        } && (viewNode.inputType and InputType.TYPE_TEXT_VARIATION_PASSWORD == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
-                viewNode.inputType and InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD ||
-                viewNode.inputType and InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
-                viewNode.inputType and InputType.TYPE_NUMBER_VARIATION_PASSWORD == InputType.TYPE_NUMBER_VARIATION_PASSWORD ||
-                viewNode.inputType and InputType.TYPE_DATETIME_VARIATION_NORMAL == InputType.TYPE_DATETIME_VARIATION_NORMAL) // this is necessary for autofill to work on Amazon's apps
+                it.contains(other = hint, ignoreCase = true) || hint.contains(
+                    other = it,
+                    ignoreCase = true
+                )
+            } == true || viewNode.hint?.contains(
+                other = hint,
+                ignoreCase = true
+            ) == true || hint.contains(other = viewNode.hint.toString(), ignoreCase = true)
+        } && (viewNode.inputType and InputType.TYPE_TEXT_VARIATION_PASSWORD == InputType.TYPE_TEXT_VARIATION_PASSWORD || viewNode.inputType and InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD || viewNode.inputType and InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD || viewNode.inputType and InputType.TYPE_NUMBER_VARIATION_PASSWORD == InputType.TYPE_NUMBER_VARIATION_PASSWORD || viewNode.inputType and InputType.TYPE_DATETIME_VARIATION_NORMAL == InputType.TYPE_DATETIME_VARIATION_NORMAL) // this is necessary for autofill to work on Amazon's apps
     }
 
     private fun checkSuggestions(password: Credential): Boolean {
         val domain = viewWebDomain.removePrefix(prefix = "www.")
 
-        return ((domain.isNotEmpty() && (password.url.contains(other = domain, ignoreCase = true) ||
-                domain.contains(other = password.label, ignoreCase = true) ||
-                domain.contains(other = password.url, ignoreCase = true) ||
-                password.url.contains(
-                    other = domain.substringBefore(delimiter = "."),
-                    ignoreCase = true
-                ) ||
-                domain.substringBefore(delimiter = ".").contains(
-                    other = password.label,
-                    ignoreCase = true
-                ))) ||
-                (domain.isEmpty() && idPackage.isNotEmpty() && (idPackage.contains(
-                    other = password.label,
-                    ignoreCase = true
-                ) || try {
-                    idPackage.contains(
-                        other = Uri.parse(password.url).host!!,
-                        ignoreCase = true
-                    )
-                } catch (e: Exception) {
-                    false
-                } || password.packageId.equals(other = idPackage, ignoreCase = true))))
+        return ((domain.isNotEmpty() && (password.url.contains(
+            other = domain,
+            ignoreCase = true
+        ) || domain.contains(
+            other = password.label,
+            ignoreCase = true
+        ) || domain.contains(other = password.url, ignoreCase = true) || password.url.contains(
+            other = domain.substringBefore(delimiter = "."), ignoreCase = true
+        ) || domain.substringBefore(delimiter = ".").contains(
+            other = password.label, ignoreCase = true
+        ))) || (domain.isEmpty() && idPackage.isNotEmpty() && (idPackage.contains(
+            other = password.label, ignoreCase = true
+        ) || try {
+            idPackage.contains(
+                other = Uri.parse(password.url).host!!, ignoreCase = true
+            )
+        } catch (e: Exception) {
+            false
+        } || password.packageId.equals(other = idPackage, ignoreCase = true))))
     }
 
     override fun onDestroy() {
