@@ -145,6 +145,7 @@ class AutoFillService : AutofillService() {
         passwordId = mutableListOf()
         ready = false
 
+
         val context = request.fillContexts
         val structure = context.last().structure
 
@@ -158,7 +159,8 @@ class AutoFillService : AutofillService() {
 
             val appName = idPackage.substringAfter(delimiter = ".").substringBefore(delimiter = ".")
 
-            val params = mutableMapOf<String, String>("password" to savePassword,
+            val params = mutableMapOf<String, String>(
+                "password" to savePassword,
                 "label" to when {
                     viewWebDomain.isNotEmpty() -> viewWebDomain.removePrefix(prefix = "www.")
                         .substringBefore(delimiter = ".").replaceFirstChar { it.titlecase() }
@@ -292,15 +294,12 @@ class AutoFillService : AutofillService() {
         return usernameHints.any { hint ->
             viewNode.autofillHints?.any {
                 it.contains(other = hint, ignoreCase = true) || hint.contains(
-                    other = it,
-                    ignoreCase = true
+                    other = it, ignoreCase = true
                 )
             } == true || viewNode.hint?.contains(
-                other = hint,
-                ignoreCase = true
+                other = hint, ignoreCase = true
             ) == true || (viewNode.hint?.isNotEmpty() == true && hint.contains(
-                other = viewNode.hint.toString(),
-                ignoreCase = true
+                other = viewNode.hint.toString(), ignoreCase = true
             ))
         }
     }
@@ -309,12 +308,10 @@ class AutoFillService : AutofillService() {
         return passwordHints.any { hint ->
             viewNode.autofillHints?.any {
                 it.contains(other = hint, ignoreCase = true) || hint.contains(
-                    other = it,
-                    ignoreCase = true
+                    other = it, ignoreCase = true
                 )
             } == true || viewNode.hint?.contains(
-                other = hint,
-                ignoreCase = true
+                other = hint, ignoreCase = true
             ) == true || hint.contains(other = viewNode.hint.toString(), ignoreCase = true)
         } && (viewNode.inputType and InputType.TYPE_TEXT_VARIATION_PASSWORD == InputType.TYPE_TEXT_VARIATION_PASSWORD || viewNode.inputType and InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD || viewNode.inputType and InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD || viewNode.inputType and InputType.TYPE_NUMBER_VARIATION_PASSWORD == InputType.TYPE_NUMBER_VARIATION_PASSWORD || viewNode.inputType and InputType.TYPE_DATETIME_VARIATION_NORMAL == InputType.TYPE_DATETIME_VARIATION_NORMAL) // this is necessary for autofill to work on Amazon's apps
     }
@@ -323,11 +320,9 @@ class AutoFillService : AutofillService() {
         val domain = viewWebDomain.removePrefix(prefix = "www.")
 
         return ((domain.isNotEmpty() && (password.url.contains(
-            other = domain,
-            ignoreCase = true
+            other = domain, ignoreCase = true
         ) || domain.contains(
-            other = password.label,
-            ignoreCase = true
+            other = password.label, ignoreCase = true
         ) || domain.contains(other = password.url, ignoreCase = true) || password.url.contains(
             other = domain.substringBefore(delimiter = "."), ignoreCase = true
         ) || domain.substringBefore(delimiter = ".").contains(
