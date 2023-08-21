@@ -5,13 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.devsinc.cipherhive.domain.repository.CredentialRepository
 import com.devsinc.cipherhive.domain.model.Credential
-import com.devsinc.cipherhive.domain.use_case.crypto.SaveEncryptedCredential
-import com.devsinc.cipherhive.domain.use_case.validate.ValidateLabel
-import com.devsinc.cipherhive.domain.use_case.validate.ValidatePassword
-import com.devsinc.cipherhive.domain.use_case.validate.ValidateUrl
-import com.devsinc.cipherhive.domain.use_case.validate.ValidateUsername
+import com.devsinc.cipherhive.domain.use_case.crypto.DbUseCases
 import com.devsinc.cipherhive.domain.use_case.validate.ValidationUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -21,8 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CredentialViewModel @Inject constructor(
-    private val saveCredential: SaveEncryptedCredential,
-    private val validationUseCases: ValidationUseCases
+    private val db: DbUseCases, private val validationUseCases: ValidationUseCases
 ) : ViewModel() {
 
     var state by mutableStateOf(CredentialFormState())
@@ -56,11 +50,33 @@ class CredentialViewModel @Inject constructor(
                 validateAndSaveCredential()
             }
 
+            is CredentialFormEvent.OnUpdateClicked -> {
+                validateAndSaveCredential(event.credential)
+            }
+
             else -> {}
         }
     }
 
-    private fun validateAndSaveCredential() {
+    fun updateState(credential: Credential) {
+        state = credential.notes?.let {
+            state.copy(
+                label = credential.label,
+                username = credential.username,
+                password = credential.password.toString(),
+                url = credential.url,
+                notes = it
+            )
+        }!!
+    }
+
+    fun resetState() {
+        state = CredentialFormState()
+    }
+
+    private fun validateAndSaveCredential(
+        credential: Credential? = null
+    ) {
         val labelResult = validationUseCases.validateLabel(state.label)
         val usernameResult = validationUseCases.validateUsername(state.username)
         val passwordResult = validationUseCases.validatePassword(state.password)
@@ -79,17 +95,41 @@ class CredentialViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch {
-            validationEventChannel.send(ValidationEvent.Success)
-            saveCredential(
-                Credential(
-                    label = state.label,
-                    username = state.username,
-                    password = state.password.toByteArray(),
-                    url = state.url,
-                    notes = state.notes
+        if (credential == null) {
+            viewModelScope.launch {
+                validationEventChannel.send(ValidationEvent.Success)
+                db.saveEncryptedCredential(
+                    Credential(
+                        label = state.label,
+                        username = state.username,
+                        password = state.password.toByteArray(),
+                        url = state.url,
+                        notes = state.notes
+                    )
                 )
-            )
+            }
+        } else {
+            viewModelScope.launch {
+                validationEventChannel.send(ValidationEvent.Success)
+                db.updateEncryptedCredential(
+                    Credential(
+                        id = credential.id,
+                        label = state.label,
+                        username = state.username,
+                        password = state.password.toByteArray(),
+                        url = state.url,
+                        notes = state.notes
+                    )
+                )
+            }
+        }
+    }
+
+    private fun deleteCredential(
+        credential: Credential
+    ) {
+        viewModelScope.launch {
+            db.deleteCredential(credential)
         }
     }
 

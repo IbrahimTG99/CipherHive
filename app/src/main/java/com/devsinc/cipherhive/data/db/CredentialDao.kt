@@ -14,8 +14,8 @@ interface CredentialDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(credential: Credential)
 
-    @Update
-    fun update(credential: Credential)
+    @Update(entity = Credential::class, onConflict = OnConflictStrategy.REPLACE)
+    suspend fun update(credential: Credential)
 
     @Delete
     fun delete(credential: Credential)

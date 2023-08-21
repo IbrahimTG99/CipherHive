@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,7 +75,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.devsinc.cipherhive.R
 import com.devsinc.cipherhive.domain.model.Credential
-import com.devsinc.cipherhive.presentation.credential.AddCredential
+import com.devsinc.cipherhive.presentation.credential.CredentialScreen
+import com.devsinc.cipherhive.presentation.credential.CredentialViewModel
 import com.devsinc.cipherhive.ui.theme.BebasNue
 import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
@@ -84,6 +87,7 @@ import com.devsinc.cipherhive.ui.theme.Typography
 fun Home(navController: NavController) {
 
     val viewModel: HomeViewModel = hiltViewModel()
+    val credentialViewModel: CredentialViewModel = hiltViewModel()
 
     val clipboardManager =
         LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -109,12 +113,17 @@ fun Home(navController: NavController) {
 
 
     val passwordBreached by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
 
     val openBottomSheetState: MutableState<Boolean> = rememberSaveable {
         mutableStateOf(false)
     }
+
+    val updatingCredential: MutableState<Credential?> = rememberSaveable {
+        mutableStateOf(null)
+    }
+
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState()
 
@@ -190,7 +199,8 @@ fun Home(navController: NavController) {
                             .height(160.dp)
                     )
                 }
-                OutlinedTextField(value = searchQuery,
+                OutlinedTextField(
+                    value = searchQuery,
                     onValueChange = {
                         searchQuery = it
                     },
@@ -225,7 +235,13 @@ fun Home(navController: NavController) {
                     } else {
                         searchQueryEmpty = false
                         itemsIndexed(filteredList) { index, item ->
-                            RecyclerItems(index, item, clipboardManager)
+                            RecyclerItems(index,
+                                item,
+                                clipboardManager,
+                                modifierClick = Modifier.clickable {
+                                    updatingCredential.value = item
+                                    openBottomSheetState.value = true
+                                })
                         }
                     }
                 }
@@ -246,10 +262,20 @@ fun Home(navController: NavController) {
 
         if (openBottomSheetState.value) {
             ModalBottomSheet(
-                onDismissRequest = { openBottomSheetState.value = false },
+                onDismissRequest = {
+                    openBottomSheetState.value = false
+                    updatingCredential.value = null
+                    credentialViewModel.resetState()
+                },
                 sheetState = bottomSheetState,
             ) {
-                AddCredential(bottomSheetState, scope, openBottomSheetState)
+                CredentialScreen(
+                    bottomSheetState,
+                    scope,
+                    openBottomSheetState,
+                    updating = updatingCredential.value != null,
+                    credential = updatingCredential.value
+                )
             }
         }
     }
@@ -262,10 +288,11 @@ fun RecyclerItems(
     item: Credential,
     clipboardManager: ClipboardManager,
     localContext: Context = LocalContext.current,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    modifierClick: Modifier
 ) {
     ConstraintLayout(
-        modifier = Modifier
+        modifier = modifierClick
             .fillMaxWidth()
             .height(60.dp)
             .border(
@@ -297,12 +324,13 @@ fun RecyclerItems(
             fontWeight = FontWeight.SemiBold,
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
-            modifier = Modifier.constrainAs(name) {
-                start.linkTo(ivIcon.end, 16.dp)
-                end.linkTo(ivCopy.start, 16.dp)
-                width = Dimension.fillToConstraints
-                centerVerticallyTo(parent)
-            })
+            modifier = Modifier
+                .constrainAs(name) {
+                    start.linkTo(ivIcon.end, 16.dp)
+                    end.linkTo(ivCopy.start, 16.dp)
+                    width = Dimension.fillToConstraints
+                    centerVerticallyTo(parent)
+                })
         IconButton(onClick = {
             val clipData = ClipData.newPlainText("Password", viewModel.decryptPassword(item))
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {

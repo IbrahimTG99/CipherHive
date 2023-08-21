@@ -56,8 +56,14 @@ class AutoFillService : AutofillService() {
     lateinit var credentialRepository: CredentialRepository
 
 
-    override fun onCreate() {
-        super.onCreate()
+//    override fun onCreate() {
+//        super.onCreate()
+//        usernameHints = resources.getStringArray(R.array.username_hints)
+//        passwordHints = resources.getStringArray(R.array.password_hints)
+//    }
+
+    override fun onConnected() {
+        super.onConnected()
         usernameHints = resources.getStringArray(R.array.username_hints)
         passwordHints = resources.getStringArray(R.array.password_hints)
     }

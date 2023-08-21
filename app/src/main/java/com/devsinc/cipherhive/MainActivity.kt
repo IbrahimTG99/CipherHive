@@ -2,14 +2,20 @@ package com.devsinc.cipherhive
 
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.biometric.BiometricPrompt
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -25,11 +31,12 @@ import com.devsinc.cipherhive.presentation.sign_in.SignInViewModel
 import com.devsinc.cipherhive.presentation.splash.Splash
 import com.devsinc.cipherhive.ui.theme.CipherHiveTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     @Inject
     lateinit var googleAuthUiClient: GoogleAuthUiClient
 
@@ -39,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CipherHiveTheme {
+                Authenticate()
                 val navController = rememberNavController()
                 NavHost(
                     navController = navController,
@@ -106,18 +114,61 @@ class MainActivity : ComponentActivity() {
                     composable("profile") {
                         ProfileScreen(userData = googleAuthUiClient.getSignedInUser(),
                             onSignOut = {
-                            lifecycleScope.launch {
-                                googleAuthUiClient.signOut()
-                                Toast.makeText(
-                                    this@MainActivity, "Sign out successful", Toast.LENGTH_LONG
-                                ).show()
+                                lifecycleScope.launch {
+                                    googleAuthUiClient.signOut()
+                                    Toast.makeText(
+                                        this@MainActivity, "Sign out successful", Toast.LENGTH_LONG
+                                    ).show()
 
-                                navController.popBackStack()
-                            }
-                        })
+                                    navController.popBackStack()
+                                }
+                            })
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun Authenticate() {
+    val context = LocalContext.current
+    val activity = LocalContext.current as FragmentActivity
+    val executor = ContextCompat.getMainExecutor(activity)
+
+    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Biometric login for my app")
+        .setSubtitle("Log in using your biometric credential")
+        .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
+        .build()
+
+    val biometricPrompt =
+        BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                Toast.makeText(context, "Authentication error: $errString", Toast.LENGTH_SHORT)
+                    .show()
+            }
+
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                Toast.makeText(
+                    context,
+                    "Authentication succeeded!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Toast.makeText(
+                    context, "Authentication failed", Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
+
+    LaunchedEffect(Unit) {
+        delay(500)
+        biometricPrompt.authenticate(promptInfo)
     }
 }
