@@ -1,12 +1,19 @@
 package com.devsinc.cipherhive
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
@@ -14,7 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -35,18 +44,23 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     @Inject
     lateinit var googleAuthUiClient: GoogleAuthUiClient
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        installSplashScreen()
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            installSplashScreen()
+        }
 
         setContent {
             CipherHiveTheme {
-                Authenticate()
+//                Authenticate()
                 val navController = rememberNavController()
                 NavHost(
                     navController = navController,
@@ -130,11 +144,14 @@ class MainActivity : FragmentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun Authenticate() {
     val context = LocalContext.current
     val activity = LocalContext.current as FragmentActivity
     val executor = ContextCompat.getMainExecutor(activity)
+
+    CheckBiometric(context = context, activity = activity)
 
     val promptInfo = BiometricPrompt.PromptInfo.Builder()
         .setTitle("Biometric login for my app")
@@ -170,5 +187,34 @@ fun Authenticate() {
     LaunchedEffect(Unit) {
         delay(500)
         biometricPrompt.authenticate(promptInfo)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+@Composable
+fun CheckBiometric(context: Context, activity: FragmentActivity) {
+    val biometricManager = BiometricManager.from(context)
+    when (biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
+        BiometricManager.BIOMETRIC_SUCCESS ->
+            Log.d("MY_APP_TAG", "App can authenticate using biometrics.")
+
+        BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE ->
+            Log.e("MY_APP_TAG", "No biometric features available on this device.")
+
+        BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE ->
+            Log.e("MY_APP_TAG", "Biometric features are currently unavailable.")
+
+        BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+            // Prompts the user to create credentials that your app accepts.
+            val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
+                putExtra(
+                    Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
+                    BIOMETRIC_STRONG or DEVICE_CREDENTIAL
+                )
+            }
+
+            startActivityForResult(activity, enrollIntent, 1234, null)
+
+        }
     }
 }
