@@ -214,7 +214,6 @@ fun CheckBiometric(context: Context, activity: FragmentActivity) {
             }
 
             startActivityForResult(activity, enrollIntent, 1234, null)
-
         }
     }
 }
