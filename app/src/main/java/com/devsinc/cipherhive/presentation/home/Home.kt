@@ -1,5 +1,11 @@
 package com.devsinc.cipherhive.presentation.home
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.os.PersistableBundle
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -7,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -35,45 +42,55 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.devsinc.cipherhive.R
-import com.devsinc.cipherhive.getMockList
-import com.devsinc.cipherhive.model.CredentialsModel
+import com.devsinc.cipherhive.domain.model.Credential
+import com.devsinc.cipherhive.presentation.credential.CredentialScreen
+import com.devsinc.cipherhive.presentation.credential.CredentialViewModel
 import com.devsinc.cipherhive.ui.theme.BebasNue
 import com.devsinc.cipherhive.ui.theme.Poppins
 import com.devsinc.cipherhive.ui.theme.Typography
 
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview
 @Composable
-fun Home() {
+fun Home(navController: NavController) {
 
-    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val viewModel: HomeViewModel = hiltViewModel()
+    val credentialViewModel: CredentialViewModel = hiltViewModel()
+
+    val clipboardManager =
+        LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     val scaffoldState = rememberScaffoldState()
 
@@ -85,14 +102,31 @@ fun Home() {
         mutableStateOf(false)
     }
 
+    val credentials: List<Credential> by viewModel.getAllCredentials()
+        .collectAsStateWithLifecycle(initialValue = emptyList())
 
-    val passwordStored by rememberSaveable {
-        mutableStateOf(5)
+    val passwordStored by remember {
+        derivedStateOf {
+            credentials.size
+        }
     }
+
 
     val passwordBreached by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
+
+    val openBottomSheetState: MutableState<Boolean> = rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    val updatingCredential: MutableState<Credential?> = rememberSaveable {
+        mutableStateOf(null)
+    }
+
+    val scope = rememberCoroutineScope()
+    val bottomSheetState = rememberModalBottomSheetState()
+
 
     Scaffold(scaffoldState = scaffoldState,
         modifier = Modifier
@@ -102,17 +136,22 @@ fun Home() {
         isFloatingActionButtonDocked = true,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {},
+                onClick = {
+                    openBottomSheetState.value = !openBottomSheetState.value
+                },
                 shape = CircleShape,
+                containerColor = Color(0xFFFF6464),
                 contentColor = Color.White,
                 modifier = Modifier.padding(top = 48.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = "Add icon")
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Credential icon")
             }
         },
         bottomBar = {
             HomeBottomMenu(
-                scaffoldState = scaffoldState, scope = rememberCoroutineScope()
+                scaffoldState = scaffoldState,
+                scope = rememberCoroutineScope(),
+                navController = navController
             )
         }) { it ->
         BoxWithConstraints(Modifier.padding(it)) {
@@ -186,14 +225,23 @@ fun Home() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
                 LazyColumn(modifier = Modifier.layoutId("rv")) {
-                    val filteredList =
-                        getMockList().filter { s -> s.title.toString().contains(searchQuery) }
+                    val filteredList = credentials.filter {
+                        it.label.startsWith(
+                            searchQuery, ignoreCase = true
+                        )
+                    }
                     if (filteredList.isEmpty()) {
                         searchQueryEmpty = true
                     } else {
                         searchQueryEmpty = false
                         itemsIndexed(filteredList) { index, item ->
-                            RecyclerItems(index, item, clipboardManager)
+                            RecyclerItems(index,
+                                item,
+                                clipboardManager,
+                                modifierClick = Modifier.clickable {
+                                    updatingCredential.value = item
+                                    openBottomSheetState.value = true
+                                })
                         }
                     }
                 }
@@ -211,14 +259,40 @@ fun Home() {
                 }
             }
         }
+
+        if (openBottomSheetState.value) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    openBottomSheetState.value = false
+                    updatingCredential.value = null
+                    credentialViewModel.resetState()
+                },
+                sheetState = bottomSheetState,
+            ) {
+                CredentialScreen(
+                    bottomSheetState,
+                    scope,
+                    openBottomSheetState,
+                    updating = updatingCredential.value != null,
+                    credential = updatingCredential.value
+                )
+            }
+        }
     }
 }
 
 
 @Composable
-fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: ClipboardManager) {
+fun RecyclerItems(
+    index: Int,
+    item: Credential,
+    clipboardManager: ClipboardManager,
+    localContext: Context = LocalContext.current,
+    viewModel: HomeViewModel = hiltViewModel(),
+    modifierClick: Modifier
+) {
     ConstraintLayout(
-        modifier = Modifier
+        modifier = modifierClick
             .fillMaxWidth()
             .height(60.dp)
             .border(
@@ -229,7 +303,7 @@ fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: Clipboar
         val color = if (index % 2 == 0) {
             Color(0xFFFF6464)
         } else Color(0xFF545974)
-        Text(text = item.title[0].toString(),
+        Text(text = item.label[0].toString(),
             color = Color.White,
             fontSize = 30.sp,
             textAlign = TextAlign.Center,
@@ -243,21 +317,34 @@ fun RecyclerItems(index: Int, item: CredentialsModel, clipboardManager: Clipboar
                     start.linkTo(parent.start, 8.dp)
                     centerVerticallyTo(parent)
                 })
-        Text(text = item.title,
+        Text(text = item.label,
             color = Color(0xFF545974),
             fontSize = 16.sp,
             fontFamily = Poppins(),
             fontWeight = FontWeight.SemiBold,
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
-            modifier = Modifier.constrainAs(name) {
-                start.linkTo(ivIcon.end, 16.dp)
-                end.linkTo(ivCopy.start, 16.dp)
-                width = Dimension.fillToConstraints
-                centerVerticallyTo(parent)
-            })
+            modifier = Modifier
+                .constrainAs(name) {
+                    start.linkTo(ivIcon.end, 16.dp)
+                    end.linkTo(ivCopy.start, 16.dp)
+                    width = Dimension.fillToConstraints
+                    centerVerticallyTo(parent)
+                })
         IconButton(onClick = {
-            clipboardManager.setText(AnnotatedString(item.password))
+            val clipData = ClipData.newPlainText("Password", viewModel.decryptPassword(item))
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                Toast.makeText(
+                    localContext, "Password copied to clipboard", Toast.LENGTH_SHORT
+                ).show()
+            }
+            clipData.apply {
+                description.extras = PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", true)
+                }
+            }
+            clipboardManager.setPrimaryClip(clipData)
+
         }, modifier = Modifier.constrainAs(ivCopy) {
             end.linkTo(parent.end, 8.dp)
             centerVerticallyTo(parent)
