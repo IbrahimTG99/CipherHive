@@ -1,7 +1,6 @@
 package com.devsinc.cipherhive.presentation.auth
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -192,43 +191,24 @@ fun IntroPage(page: Int, scope: CoroutineScope, navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .layoutId("btnContainer"),
-                horizontalArrangement = Arrangement.SpaceAround
+                horizontalArrangement = Arrangement.Center
             ) {
-                OutlinedButton(
-                    border = if (page == 2) BorderStroke(
-                        4.dp, Color(0xFFFF6464)
-                    ) else BorderStroke(4.dp, Color(0xfffE0E0E0)), onClick = {
-                        navController.navigate("register") {
-                            popUpTo(0)
-                        }
-                    }, modifier = Modifier
-                        .height(40.dp)
-                        .weight(1f), enabled = page == 2
-                ) {
-                    Text(
-                        text = "REGISTER",
-                        fontFamily = BebasNue(),
-                        fontSize = 18.sp,
-                        color = if (page == 2) Color(0xFFFF6464) else Color(0xfffE0E0E0)
-                    )
-                }
-                Spacer(modifier = Modifier.width(24.dp))
                 Button(
                     onClick = {
                         scope.launch {
-                            navController.navigate("login") {
+                            navController.navigate("home") {
                                 popUpTo(0)
                             }
                         }
                     },
                     modifier = Modifier
-                        .height(40.dp)
-                        .weight(1f),
+                        .height(48.dp)
+                        .fillMaxWidth(),
                     enabled = page == 2,
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFFF6464))
                 ) {
                     Text(
-                        text = "LOGIN",
+                        text = "GET STARTED",
                         fontFamily = BebasNue(),
                         fontSize = 18.sp,
                         color = Color.White

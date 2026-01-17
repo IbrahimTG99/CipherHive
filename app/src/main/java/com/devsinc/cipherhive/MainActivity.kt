@@ -23,8 +23,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.devsinc.cipherhive.presentation.auth.Intro
-import com.devsinc.cipherhive.presentation.auth.Login
-import com.devsinc.cipherhive.presentation.auth.Register
 import com.devsinc.cipherhive.presentation.home.Home
 import com.devsinc.cipherhive.presentation.profile.ProfileScreen
 import com.devsinc.cipherhive.presentation.settings.SettingsScreen
@@ -57,12 +55,6 @@ class MainActivity : FragmentActivity() {
                     }
                     composable("intro") {
                         Intro(navController)
-                    }
-                    composable("login") {
-                        Login(navController = navController)
-                    }
-                    composable("register") {
-                        Register(navController)
                     }
                     composable("home") {
                         Home(navController = navController)
