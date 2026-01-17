@@ -1,6 +1,5 @@
 package com.devsinc.cipherhive.presentation.auth
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +19,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -29,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -39,15 +36,12 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
-import com.devsinc.cipherhive.presentation.sign_in.SignInState
 import com.devsinc.cipherhive.ui.theme.BebasNue
 import com.devsinc.cipherhive.ui.theme.Poppins
 
 
 @Composable
 fun Login(
-    state: SignInState,
-    onSignInClick: () -> Unit,
     navController: NavController
 ) {
     var email by rememberSaveable {
@@ -57,14 +51,6 @@ fun Login(
         mutableStateOf("")
     }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-
-    val context = LocalContext.current
-
-    LaunchedEffect(key1 = state.signInError) {
-        state.signInError?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-        }
-    }
 
     BoxWithConstraints {
         ConstraintLayout(splashConstraintSet(), modifier = Modifier.fillMaxSize()) {
@@ -84,7 +70,7 @@ fun Login(
                 modifier = Modifier.layoutId("tvTitle")
             )
             Text(
-                text = "Let’s get back to your account!",
+                text = "Let's get back to your account!",
                 fontSize = 14.sp,
                 fontFamily = Poppins(),
                 color = Color(0xfffbababa),
@@ -178,19 +164,6 @@ fun Login(
                 )
             }
 
-            GoogleButton(
-                text = "Login with Google",
-                loadingText = "Logging in...",
-                onClicked = onSignInClick,
-                modifier = Modifier
-                    .layoutId("btnGoogle")
-                    .height(48.dp)
-                    .shadow(
-                        10.dp,
-                        RoundedCornerShape(12.dp)
-                    )
-            )
-
             Text(
                 text = "Don't have an account yet ?",
                 fontSize = 14.sp,
@@ -227,7 +200,6 @@ fun splashConstraintSet(): ConstraintSet {
         val etPassword = createRefFor("etPassword")
         val tvForgotPassword = createRefFor("tvForgotPassword")
         val btnLogin = createRefFor("btnLogin")
-        val btnGoogle = createRefFor("btnGoogle")
         val tvRegister = createRefFor("tvRegister")
         val tvDont = createRefFor("tvDont")
 
@@ -267,14 +239,8 @@ fun splashConstraintSet(): ConstraintSet {
             width = Dimension.fillToConstraints
             top.linkTo(tvForgotPassword.bottom, 24.dp)
         }
-        constrain(btnGoogle){
-            start.linkTo(parent.start, 24.dp)
-            end.linkTo(parent.end, 24.dp)
-            width = Dimension.fillToConstraints
-            top.linkTo(btnLogin.bottom, 16.dp)
-        }
         constrain(tvDont) {
-            top.linkTo(btnGoogle.bottom, 32.dp)
+            top.linkTo(btnLogin.bottom, 32.dp)
             centerHorizontallyTo(parent)
         }
         constrain(tvRegister) {
@@ -283,3 +249,4 @@ fun splashConstraintSet(): ConstraintSet {
         }
     }
 }
+
