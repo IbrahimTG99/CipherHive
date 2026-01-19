@@ -47,7 +47,7 @@ fun Splash(navController: NavController) {
         )
         delay(1000L)
         navController.navigate("intro") {
-
+            popUpTo(0)
         }
     }
 
